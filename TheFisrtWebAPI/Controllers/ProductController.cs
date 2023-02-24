@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
+using TheFisrtWebAPI.Data;
 using TheFisrtWebAPI.Models;
 
 namespace TheFisrtWebAPI.Controllers
@@ -15,11 +16,11 @@ namespace TheFisrtWebAPI.Controllers
             _context = context;
         }
 
-        /*// GET: api/<ProductController>
-        [HttpGet("GetProduct")]
+        // GET: api/<ProductController>
+        [HttpGet]
         public async Task<ActionResult<List<Products>>> GetProduct()
         {
-            var List = await _context.Product.Select(
+            var lst = await _context.Product.Select(
                 s => new Products
                 {
                     Id = s.Id,
@@ -29,47 +30,47 @@ namespace TheFisrtWebAPI.Controllers
 
                 }).ToListAsync();
 
-            if (List.Count < 0)
+            if (lst.Count < 0)
             {
 
                 return NotFound();
             }
             else
             {
-                return Ok(List);
+                return Ok(lst);
             }
-        }*/
+        }
 
-        /*// GET api/<ProductController>/5
-        [HttpGet("GetProduct/{id}")]
-        public async Task<ActionResult<Products>> GetProductById(int id)
+        // GET api/<ProductController>/5
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Products>> GetProductById(string id)
         {
-            var List = await _context.Product.Select(
+            var lst = await _context.Product.Select(
                 s => new Products
                 {
                     Id = s.Id,
                     Name = s.Name,
                     Description = s.Description,
                     Price = s.Price,
-                }).FirstOrDefaultAsync(s => s.Id == id);
-            if (List == null)
+                }).FirstOrDefaultAsync(s => s.Id == Guid.Parse(id));
+            if (lst == null)
             {
                 return NotFound();
             }
             else
             {
-                return Ok(List);
+                return Ok(lst);
             }
         }
-        */
+
 
         // POST api/<ProductController>
-        [HttpPost("CreateNewProd")]
+        [HttpPost]
         public async Task<IActionResult> CreateNewProd(Products prod)
         {
             var p = new Products()
             {
-                Id = prod.Id,
+                Id = Guid.NewGuid(),
                 Name = prod.Name,
                 Description = prod.Description,
                 Price = prod.Price,
@@ -81,14 +82,15 @@ namespace TheFisrtWebAPI.Controllers
 
 
         // PUT api/<ProductController>/5
-        [HttpPut("UpdateProd/{id}")]
-        public async Task<IActionResult> UpdateProd(int id, Products prod)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateProd(string id, Products prod)
         {
-            if (id != prod.Id)
+            if (Guid.Parse(id) != prod.Id)
             {
                 return NotFound();
             }
             _context.Entry(prod).State = EntityState.Modified;
+            
             try
             {
                 await _context.SaveChangesAsync();
@@ -106,8 +108,8 @@ namespace TheFisrtWebAPI.Controllers
         }
 
         // DELETE api/<ProductController>/5
-        [HttpDelete("DeleteProd/{id}")]
-        public async Task<IActionResult> Delete(int id)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(Guid id)
         {
             var prod = await _context.Product.FindAsync(id);
             if (id != prod.Id)
@@ -122,90 +124,10 @@ namespace TheFisrtWebAPI.Controllers
             return Ok("Delete Prod Success");
         }
 
-
-        //GET: api/Product
-        [HttpGet("GetProduct")]
-        public async Task<ActionResult<IEnumerable<ProductsDTO>>> GetProduct()
+        private bool ProdItemExists(string id)
         {
-            return await _context.Product
-                .Select(s => productDTO(s))
-            .ToListAsync();
+            return _context.Product.Any(e => e.Id == Guid.Parse(id));
         }
 
-        //GET ID: api/Product/{id}
-        [HttpGet("GetProduct/{id}")]
-        public async Task<ActionResult<ProductsDTO>> GetProductById(int id)
-        {
-            var prod = await _context.Product.FindAsync(id);
-
-            if (prod == null)
-            {
-                return NotFound();
-            }
-            return productDTO(prod);
-        }
-
-        /* //POST: api/Product - MUST TO SET DESCRIPTION IS NULL
-        [HttpPost("CreateNewProd")]
-        public async Task<ActionResult<ProductsDTO>> CreateNewProd(ProductsDTO prodDTO)
-        {
-            var prod = new Products
-            {
-                //Id = prodDTO.Id,
-                Name = prodDTO.Name,
-                Price = prodDTO.Price
-            };
-
-            _context.Product.Add(prod);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(
-                nameof(GetProduct),
-                new { id = prod.Id },
-                productDTO(prod));
-        }*/
-
-        /*//PUT: api/Product - MUST TO SET DESCRIPTION IS NULL
-        [HttpPut("UpdateProd/{id}")]
-        public async Task<ActionResult<ProductsDTO>> UpdateProd(int id, ProductsDTO prodDTO)
-        {   
-            if(id != prodDTO.Id)
-            {
-                return NotFound();
-            }
-
-            var prod = await _context.Product.FindAsync(id);
-            if(prod == null)
-            {
-                return NotFound();
-            }
-
-            prod.Name = prodDTO.Name;
-            prod.Price = prodDTO.Price;
-
-            try
-            {
-                await async _context.SaveChangesAsync();
-            }
-            catch(DbUpdateConcurrencyException) when (!ProdItemExists(id))
-            {
-                return NotFound();
-            }
-            return Ok("Update Prod Success");
-            
-        }*/
-
-
-        private bool ProdItemExists(long id)
-        {
-            return _context.Product.Any(e => e.Id == id);
-        }
-
-        private static ProductsDTO productDTO(Products product) => new ProductsDTO
-        {
-            Id = product.Id,
-            Name = product.Name,
-            Price = product.Price
-        };
     }
 }
